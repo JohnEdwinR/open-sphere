@@ -8,23 +8,9 @@
  * Run: pnpm --filter @open-sphere/backend sim:headless
  */
 import { ComponentType } from "../contexts/simulation/domain/ecs/types.js";
-import { World } from "../contexts/simulation/domain/ecs/World.js";
-import { createRng, rngRange } from "../contexts/simulation/domain/util/Rng.js";
-import { UtilityAI } from "../contexts/simulation/domain/ai/UtilityAI.js";
-import {
-  ConsumptionSystem,
-  DecisionSystem,
-  EventSystem,
-  LifecycleSystem,
-  MovementSystem,
-  PerceptionSystem,
-  VitalitySystem,
-} from "../contexts/simulation/domain/systems/index.js";
-import type { System } from "../contexts/simulation/domain/systems/System.js";
-import { SimulationClock } from "../contexts/simulation/application/SimulationClock.js";
-import { spawnSnake } from "../contexts/simulation/application/SpawnSnake.js";
-import { spawnFood } from "../contexts/simulation/application/SpawnFood.js";
-import { InMemoryEventLog } from "../contexts/simulation/infrastructure/InMemoryEventLog.js";
+import type { World } from "../contexts/simulation/domain/ecs/World.js";
+import type { SimulationClock } from "../contexts/simulation/application/SimulationClock.js";
+import { bootstrapSimulation } from "../contexts/simulation/application/bootstrapSimulation.js";
 import type { Vitality } from "../contexts/simulation/domain/components/Vitality.js";
 
 const SEED = Number(process.env.SIM_SEED ?? 42);
@@ -38,54 +24,6 @@ const CHUNK_ID = 0;
 // UtilityAI's committed-exploration fix for why food density vs. perception
 // radius matters mechanically, not just cosmetically.
 const BOUNDS = { minX: 0, maxX: 60, minY: 0, maxY: 60 };
-
-function bootstrap() {
-  const rng = createRng(SEED);
-  const world = new World();
-  const eventLog = new InMemoryEventLog();
-  const decisionStrategy = new UtilityAI(rng);
-
-  const systems: System[] = [
-    new PerceptionSystem(),
-    new DecisionSystem(decisionStrategy),
-    new MovementSystem(),
-    new ConsumptionSystem(eventLog),
-    new VitalitySystem(),
-    new LifecycleSystem(eventLog),
-    new EventSystem(rng, eventLog, {
-      chunkId: CHUNK_ID,
-      bounds: BOUNDS,
-      maxFoodEntities: INITIAL_FOOD * 2,
-      spawnChancePerTick: 0.3,
-      nutritionRange: [3, 12],
-      decayTicksRange: [80, 200],
-    }),
-  ];
-
-  const clock = new SimulationClock(world, systems);
-
-  for (let i = 0; i < INITIAL_SNAKES; i += 1) {
-    spawnSnake(world, rng, eventLog, {
-      chunkId: CHUNK_ID,
-      x: rngRange(rng, BOUNDS.minX, BOUNDS.maxX),
-      y: rngRange(rng, BOUNDS.minY, BOUNDS.maxY),
-      tick: clock.currentTick,
-    });
-  }
-
-  for (let i = 0; i < INITIAL_FOOD; i += 1) {
-    spawnFood(world, eventLog, {
-      chunkId: CHUNK_ID,
-      x: rngRange(rng, BOUNDS.minX, BOUNDS.maxX),
-      y: rngRange(rng, BOUNDS.minY, BOUNDS.maxY),
-      nutrition: rngRange(rng, 3, 12),
-      decayTicksRemaining: Math.round(rngRange(rng, 80, 200)),
-      tick: clock.currentTick,
-    });
-  }
-
-  return { world, clock, eventLog };
-}
 
 function printSummary(world: World, clock: SimulationClock): void {
   const snakeIds = world.query([ComponentType.Vitality]);
@@ -104,7 +42,14 @@ function printSummary(world: World, clock: SimulationClock): void {
 }
 
 function main(): void {
-  const { world, clock, eventLog } = bootstrap();
+  const { world, clock, eventLog } = bootstrapSimulation({
+    seed: SEED,
+    chunkId: CHUNK_ID,
+    bounds: BOUNDS,
+    initialSnakes: INITIAL_SNAKES,
+    initialFood: INITIAL_FOOD,
+    foodSpawnChancePerTick: 0.3,
+  });
   let lastLoggedEventIndex = 0;
 
   const interval = setInterval(() => {
