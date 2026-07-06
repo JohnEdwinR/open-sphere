@@ -1,8 +1,8 @@
 name: open-sphere-dev
 
 # Local development infrastructure only (see 03_SOFTWARE_ARCHITECTURE/Architecture.md §8).
-# Not consumed by apps/backend yet — the Phase 1 simulation engine is headless/in-memory.
-# Wired up starting Phase 3 (Backend & Persistence), see 01_PRODUCT/Roadmap.md.
+# Postgres is used by apps/backend/prisma (see apps/backend/README.md); Redis
+# is not wired into the app yet (WorldGateway still broadcasts in-process).
 
 services:
   postgres:
@@ -13,7 +13,12 @@ services:
       POSTGRES_PASSWORD: open_sphere_dev
       POSTGRES_DB: open_sphere
     ports:
-      - "5432:5432"
+      # Host port 5433, not 5432: this machine already runs a native
+      # Windows PostgreSQL service on 5432, which silently wins connections
+      # from the host to "localhost:5432" over the container. Only the
+      # host-side mapping changes — Postgres still listens on 5432 inside
+      # the container/Docker network.
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
 

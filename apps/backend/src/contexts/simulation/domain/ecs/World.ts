@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ComponentTypeName, EntityId } from "./types.js";
 
 /**
@@ -8,12 +9,16 @@ import type { ComponentTypeName, EntityId } from "./types.js";
  * required (traces FR-SIM-003 in the Software Requirements Specification).
  */
 export class World {
-  private nextEntitySeq = 1;
   private readonly entities = new Set<EntityId>();
   private readonly stores = new Map<ComponentTypeName, Map<EntityId, unknown>>();
 
+  /**
+   * Real UUIDs (not a simulation-local counter) specifically so an entity id
+   * is already a valid `creatures.id` (Database Design §2 — `uuid` PK) the
+   * moment it's checkpointed to Postgres, with no id-translation layer.
+   */
   createEntity(): EntityId {
-    const id = `e${this.nextEntitySeq++}`;
+    const id = randomUUID();
     this.entities.add(id);
     return id;
   }

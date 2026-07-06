@@ -11,9 +11,20 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@fastify/jwt": "^9.0.3",
+    "@fastify/static": "^8.0.3",
+    "@node-rs/argon2": "^2.0.2",
+    "@prisma/client": "^5.22.0",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bullmq": "^5.28.1",
+    "fastify": "^5.1.0",
+    "ioredis": "^5.4.1",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
@@ -21,6 +32,7 @@
     "tsx": "^4.19.2",
     "vitest": "^2.1.4",
     "@types/node": "^22.9.0",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "prisma": "^5.22.0"
   }
 }

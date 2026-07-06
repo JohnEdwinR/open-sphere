@@ -15,6 +15,7 @@ import { SimulationClock } from "./SimulationClock.js";
 import { spawnSnake } from "./SpawnSnake.js";
 import { spawnFood } from "./SpawnFood.js";
 import { InMemoryEventLog } from "../infrastructure/InMemoryEventLog.js";
+import type { EventLogPort } from "../domain/events/EventLogPort.js";
 
 export interface SimulationBounds {
   minX: number;
@@ -30,12 +31,16 @@ export interface BootstrapSimulationOptions {
   initialSnakes: number;
   initialFood: number;
   foodSpawnChancePerTick: number;
+  /** Defaults to a fresh InMemoryEventLog — pass a PrismaEventLogPort for durable history. */
+  eventLog?: EventLogPort;
 }
 
 export interface SimulationHandle {
   world: World;
   clock: SimulationClock;
-  eventLog: InMemoryEventLog;
+  eventLog: EventLogPort;
+  /** Exposed so a scheduler (e.g. WorldEventScheduler) can apply time-boxed event modifiers. */
+  eventSystem: EventSystem;
 }
 
 /**
@@ -43,14 +48,23 @@ export interface SimulationHandle {
  * seeds the initial population. Shared by every runtime entry point
  * (headless.ts, server.ts, ...) so "how a simulation is assembled" has a
  * single definition — the entry points differ only in what they do with
- * ticks (log to stdout vs. broadcast over WebSocket), not in how the world
- * is built.
+ * ticks (log to stdout vs. broadcast over WebSocket) and which EventLogPort
+ * they inject, not in how the world is built.
  */
 export function bootstrapSimulation(options: BootstrapSimulationOptions): SimulationHandle {
   const rng = createRng(options.seed);
   const world = new World();
-  const eventLog = new InMemoryEventLog();
+  const eventLog = options.eventLog ?? new InMemoryEventLog();
   const decisionStrategy = new UtilityAI(rng);
+
+  const eventSystem = new EventSystem(rng, eventLog, {
+    chunkId: options.chunkId,
+    bounds: options.bounds,
+    maxFoodEntities: options.initialFood * 2,
+    spawnChancePerTick: options.foodSpawnChancePerTick,
+    nutritionRange: [3, 12],
+    decayTicksRange: [80, 200],
+  });
 
   const systems: System[] = [
     new PerceptionSystem(),
@@ -59,14 +73,7 @@ export function bootstrapSimulation(options: BootstrapSimulationOptions): Simula
     new ConsumptionSystem(eventLog),
     new VitalitySystem(),
     new LifecycleSystem(eventLog),
-    new EventSystem(rng, eventLog, {
-      chunkId: options.chunkId,
-      bounds: options.bounds,
-      maxFoodEntities: options.initialFood * 2,
-      spawnChancePerTick: options.foodSpawnChancePerTick,
-      nutritionRange: [3, 12],
-      decayTicksRange: [80, 200],
-    }),
+    eventSystem,
   ];
 
   const clock = new SimulationClock(world, systems);
@@ -91,5 +98,5 @@ export function bootstrapSimulation(options: BootstrapSimulationOptions): Simula
     });
   }
 
-  return { world, clock, eventLog };
+  return { world, clock, eventLog, eventSystem };
 }

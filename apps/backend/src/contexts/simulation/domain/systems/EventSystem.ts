@@ -28,16 +28,31 @@ export interface WorldEventConfig {
 export class EventSystem implements System {
   readonly name = "Event";
 
+  /**
+   * Time-boxed modifier applied to spawnChancePerTick (Simulation & World
+   * Design §6 — "Events are implemented as time-boxed modifiers to system
+   * parameters... rather than bespoke one-off code paths"). Defaults to 1
+   * (no modifier). A scheduled world event (see WorldEventScheduler) sets
+   * this above 1 for a "bloom" or below 1 for a "shortage", then restores it
+   * to 1 when the event ends.
+   */
+  private spawnChanceMultiplier = 1;
+
   constructor(
     private readonly rng: Rng,
     private readonly eventLog: EventLogPort,
     private readonly config: WorldEventConfig,
   ) {}
 
+  setSpawnChanceMultiplier(multiplier: number): void {
+    this.spawnChanceMultiplier = multiplier;
+  }
+
   update(world: World, tick: number): void {
     const currentFoodCount = world.query([ComponentType.Consumable]).length;
     if (currentFoodCount >= this.config.maxFoodEntities) return;
-    if (this.rng() > this.config.spawnChancePerTick) return;
+    const effectiveSpawnChance = Math.min(1, this.config.spawnChancePerTick * this.spawnChanceMultiplier);
+    if (this.rng() > effectiveSpawnChance) return;
 
     const id = world.createEntity();
     const transform: Transform = {

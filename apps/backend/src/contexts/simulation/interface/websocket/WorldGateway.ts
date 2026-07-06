@@ -6,6 +6,9 @@ import type { Transform } from "../../domain/components/Transform.js";
 import type { Vitality } from "../../domain/components/Vitality.js";
 import type { Consumable } from "../../domain/components/Consumable.js";
 
+/** Whatever socket.io's own `Server.adapter()` accepts — avoids a direct dependency on the transitive `socket.io-adapter` package just for a type. */
+type SocketIOAdapterConstructor = Parameters<SocketIOServer["adapter"]>[0];
+
 export type EntityKind = "snake" | "food";
 
 export interface EntityView {
@@ -42,6 +45,13 @@ export interface ChunkDelta {
  * API spec), since the "fishbowl" viewer (Roadmap Phase 2) only ever shows
  * one chunk. Multi-chunk room routing is Phase 3+ work once the world
  * actually spans more than one chunk.
+ *
+ * An optional Redis adapter (Architecture §9 — event bus / NFR-SCAL-002)
+ * makes `io.emit()` fan out across every API instance sharing that Redis,
+ * not just sockets connected to this process — required once the backend
+ * scales horizontally behind a load balancer. With a single instance (the
+ * current dev/Phase 2 setup) it's a no-op in practice; wiring it now avoids
+ * a broadcast-layer rewrite later.
  */
 export class WorldGateway {
   private readonly io: SocketIOServer;
@@ -51,8 +61,12 @@ export class WorldGateway {
   constructor(
     httpServer: HttpServer,
     private readonly chunkId: number,
+    redisAdapter?: SocketIOAdapterConstructor,
   ) {
     this.io = new SocketIOServer(httpServer, { cors: { origin: "*" } });
+    if (redisAdapter) {
+      this.io.adapter(redisAdapter);
+    }
 
     this.io.on("connection", (socket) => {
       const snapshot: ChunkSnapshot = {
@@ -62,6 +76,11 @@ export class WorldGateway {
       };
       socket.emit("chunk:snapshot", snapshot);
     });
+  }
+
+  /** `world:event` per API Specification §3.1 — global/regional event start/end. */
+  broadcastWorldEvent(event: { type: string; startsAt: string; endsAt: string }): void {
+    this.io.emit("world:event", { ...event, affectedChunks: [this.chunkId] });
   }
 
   broadcastTick(world: World, tick: number): void {
