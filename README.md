@@ -7,14 +7,14 @@ This repository is the single source of truth for Open Sphere: a persistent, ser
 ## Goals
 
 - Persistent living world
-- Mobile-first (Android primary, iOS secondary)
+- Mobile-first PWA (Android primary, iOS secondary)
 - Scalable, server-authoritative architecture
 - AI-assisted experiences (never authoritative)
 - Subscription-based, non-pay-to-win
 
 ## Implementation Status
 
-This repo is docs-plus-code: the specs under `01_PRODUCT`–`06_SECURITY` describe the full target system; `apps/backend` is a real, running implementation of the early slice of it (Roadmap Phases 1–3). Not yet built: the mobile app, the admin web panel, and most of the REST API surface beyond auth (creatures, social, economy, billing). See [apps/backend/README.md](./apps/backend/README.md) for exactly what exists.
+This repo is docs-plus-code: the specs under `01_PRODUCT`–`06_SECURITY` describe the full target system; `apps/backend` is a real, running implementation of the early slice of it (Roadmap Phases 1–3). `apps/web` is the installable PWA client (auth, live world, my creatures; see its README). Not yet built: the admin web panel, and most of the REST API surface beyond auth (creatures, social, economy, billing). See [apps/backend/README.md](./apps/backend/README.md) for exactly what exists.
 
 ## Getting Started
 
@@ -48,19 +48,19 @@ pnpm run typecheck
 
 ## Document Map
 
-| Folder | Contents |
-| --- | --- |
-| [00_PROJECT_CONSTITUTION.md](./00_PROJECT_CONSTITUTION.md) | Non-negotiable principles |
-| [01_PRODUCT/](./01_PRODUCT/) | Vision, Business Requirements, Roadmap |
-| [02_GAME_DESIGN/](./02_GAME_DESIGN/) | Core Gameplay, Simulation & World Design |
-| [03_SOFTWARE_ARCHITECTURE/](./03_SOFTWARE_ARCHITECTURE/) | Software Requirements Specification, System Architecture |
-| [04_DATABASE/](./04_DATABASE/) | Database Design (ERD, schema, sharding strategy) |
-| [05_API/](./05_API/) | REST + WebSocket API Specification |
-| [06_SECURITY/](./06_SECURITY/) | Security Specification |
-| [apps/backend/](./apps/backend/) | The actual implementation (simulation engine, WebSocket viewer, REST auth API) — see its own README for setup/run/testing detail |
-| [infra/docker/](./infra/docker/) | Local dev infrastructure (Postgres, Redis, MinIO) — `docker-compose.yml` |
+| Folder                                                    | Contents                                                                                                                          |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| [00_PROJECT_CONSTITUTION.md](./00_PROJECT_CONSTITUTION.md) | Non-negotiable principles                                                                                                         |
+| [01_PRODUCT/](./01_PRODUCT/)                               | Vision, Business Requirements, Roadmap                                                                                            |
+| [02_GAME_DESIGN/](./02_GAME_DESIGN/)                       | Core Gameplay, Simulation & World Design                                                                                          |
+| [03_SOFTWARE_ARCHITECTURE/](./03_SOFTWARE_ARCHITECTURE/)   | Software Requirements Specification, System Architecture                                                                          |
+| [04_DATABASE/](./04_DATABASE/)                             | Database Design (ERD, schema, sharding strategy)                                                                                  |
+| [05_API/](./05_API/)                                       | REST + WebSocket API Specification                                                                                                |
+| [06_SECURITY/](./06_SECURITY/)                             | Security Specification                                                                                                            |
+| [apps/backend/](./apps/backend/)                           | The actual implementation (simulation engine, WebSocket viewer, REST auth API) — see its own README for setup/run/testing detail |
+| [infra/docker/](./infra/docker/)                           | Local dev infrastructure (Postgres, Redis, MinIO) —`docker-compose.yml`                                                        |
 
-Not yet authored (deferred until the corresponding implementation decisions exist — see [Roadmap](./01_PRODUCT/Roadmap.md)): UI Specification, Deployment Guide, Developer Guide, Admin Guide, User Manual. `apps/mobile/` and `apps/admin/` are placeholders for the same reason — see each folder's README for which Roadmap phase fills them in.
+Not yet authored (deferred until the corresponding implementation decisions exist — see [Roadmap](./01_PRODUCT/Roadmap.md)): UI Specification, Deployment Guide, Developer Guide, Admin Guide, User Manual. `apps/admin/` is a placeholder for the same reason — see each folder's README for which Roadmap phase fills them in.
 
 ## Reading Order (New Contributors)
 
